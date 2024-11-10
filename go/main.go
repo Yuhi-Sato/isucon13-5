@@ -126,7 +126,7 @@ func initializeHandler(c echo.Context) error {
 		}
 	}
 
-	var themes []*ThemeModel
+	var themes []ThemeModel
 	if err := dbConn.Select(&themes, "SELECT * FROM themes"); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get themes: "+err.Error())
 	}
