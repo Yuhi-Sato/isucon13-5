@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"sync"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -30,6 +31,7 @@ var (
 	dbConn                   *sqlx.DB
 	secret                   = []byte("isucon13_session_cookiestore_defaultsecret")
 	tagById                  = make(map[int64]*Tag)
+	themeByUserId            sync.Map
 )
 
 func init() {
@@ -122,6 +124,14 @@ func initializeHandler(c echo.Context) error {
 			ID:   tag.ID,
 			Name: tag.Name,
 		}
+	}
+
+	var themes []*ThemeModel
+	if err := dbConn.Select(&themes, "SELECT * FROM themes"); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get themes: "+err.Error())
+	}
+	for _, theme := range themes {
+		themeByUserId.Store(theme.UserID, theme)
 	}
 
 	c.Request().Header.Add("Content-Type", "application/json;charset=utf-8")
