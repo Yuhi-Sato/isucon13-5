@@ -41,7 +41,6 @@ CREATE TABLE `livestreams` (
   `start_at` BIGINT NOT NULL,
   `end_at` BIGINT NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
-ALTER TABLE isupipe.livestreams ADD INDEX idx_livestream_id (livestream_id);
 ALTER TABLE isupipe.livestreams ADD INDEX idx_user_id (user_id);
 
 -- ライブ配信予約枠
