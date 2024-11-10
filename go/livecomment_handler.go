@@ -382,7 +382,7 @@ func moderateHandler(c echo.Context) error {
 	}
 
 	var livecommentIDs []int64
-	query := "SELECT l.id FROM livecomments l INNER JOIN ng_words n ON n.livestream_id = l.livestream_id WHERE l.livestream_id = ? AND n.word LIKE CONCAT('%', ?, '%')"
+	query := "SELECT l.id FROM livecomments l WHERE l.livestream_id = ? AND l.comment LIKE CONCAT('%', ?, '%')"
 	if err := tx.SelectContext(ctx, &livecommentIDs, query, livestreamID, req.NGWord); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livecomment IDs that hit spams: "+err.Error())
 	}
