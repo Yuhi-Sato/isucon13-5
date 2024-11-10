@@ -381,8 +381,19 @@ func moderateHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get last inserted NG word id: "+err.Error())
 	}
 
-	query := "DELETE FROM livecomments l INNER JOIN ng_words n ON n.livestream_id = l.id WHERE l.livestream_id = ? AND n.word LIKE CONCAT('%', ?, '%')"
-	if _, err := tx.ExecContext(ctx, query, livestreamID, req.NGWord); err != nil {
+	var livecommentIDs []int64
+	query := "SELECT l.id FROM livecomments l INNER JOIN ng_words n ON n.livestream_id = l.id WHERE l.livestream_id = ? AND n.word LIKE CONCAT('%', ?, '%')"
+	if err := tx.SelectContext(ctx, &livecommentIDs, query, livestreamID, req.NGWord); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livecomment IDs that hit spams: "+err.Error())
+	}
+
+	query = "DELETE FROM livecomments WHERE id IN (?)"
+	query, args, err := sqlx.In(query, livecommentIDs)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate query: "+err.Error())
+	}
+	query = tx.Rebind(query)
+	if _, err := tx.ExecContext(ctx, query, args...); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete livecomments that hit spams: "+err.Error())
 	}
 
