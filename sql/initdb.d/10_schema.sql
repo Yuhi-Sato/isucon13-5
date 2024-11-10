@@ -68,6 +68,7 @@ CREATE TABLE `livestream_tags` (
   `livestream_id` BIGINT NOT NULL,
   `tag_id` BIGINT NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+ALTER TABLE isupipe.livestream_tags ADD INDEX idx_livestream_id (livestream_id);
 
 -- ライブ配信視聴履歴
 DROP TABLE IF EXISTS `livestream_viewers_history`;
@@ -110,6 +111,7 @@ CREATE TABLE `ng_words` (
   `created_at` BIGINT NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 CREATE INDEX ng_words_word ON ng_words(`word`);
+ALTER TABLE isupipe.ng_words ADD INDEX idx_user_id_livestream_id (user_id, livestream_id);
 
 -- ライブ配信に対するリアクション
 DROP TABLE IF EXISTS `reactions`;
