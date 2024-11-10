@@ -390,9 +390,7 @@ func moderateHandler(c echo.Context) error {
 	query = "DELETE FROM livecomments WHERE id IN (?)"
 	query, args, _ := sqlx.In(query, livecommentIDs)
 	query = tx.Rebind(query)
-	if _, err := tx.ExecContext(ctx, query, args...); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete livecomments that hit spams: "+err.Error())
-	}
+	tx.ExecContext(ctx, query, args...)
 
 	// var ngwords []*NGWord
 	// if err := tx.SelectContext(ctx, &ngwords, "SELECT * FROM ng_words WHERE livestream_id = ?", livestreamID); err != nil {
