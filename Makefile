@@ -6,9 +6,9 @@ endif
 
 # 問題によって変わる変数
 USER:=isucon
-BIN_NAME:=app
+BIN_NAME:=isupipe
 BUILD_DIR:=./go
-SERVICE_NAME:=isu-go
+SERVICE_NAME:=isupipe-go.service
 
 DB_PATH:=/etc/mysql
 NGINX_PATH:=/etc/nginx
