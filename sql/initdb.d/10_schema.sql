@@ -1,6 +1,7 @@
 USE `isupipe`;
 
 -- ユーザ (配信者、視聴者)
+DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(255) NOT NULL,
@@ -11,20 +12,25 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- プロフィール画像
+DROP TABLE IF EXISTS `icons`;
 CREATE TABLE `icons` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` BIGINT NOT NULL,
   `image` LONGBLOB NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+ALTER TABLE isupipe.icons ADD INDEX idx_user_id (user_id);
 
 -- ユーザごとのカスタムテーマ
+DROP TABLE IF EXISTS `themes`;
 CREATE TABLE `themes` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` BIGINT NOT NULL,
   `dark_mode` BOOLEAN NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+ALTER TABLE isupipe.themes ADD INDEX idx_user_id (user_id);
 
 -- ライブ配信
+DROP TABLE IF EXISTS `livestreams`;
 CREATE TABLE `livestreams` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` BIGINT NOT NULL,
@@ -35,16 +41,21 @@ CREATE TABLE `livestreams` (
   `start_at` BIGINT NOT NULL,
   `end_at` BIGINT NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+ALTER TABLE isupipe.livestreams ADD INDEX idx_livestream_id (livestream_id);
+ALTER TABLE isupipe.livestreams ADD INDEX idx_user_id (user_id);
 
 -- ライブ配信予約枠
+DROP TABLE IF EXISTS `reservation_slots`;
 CREATE TABLE `reservation_slots` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `slot` BIGINT NOT NULL,
   `start_at` BIGINT NOT NULL,
   `end_at` BIGINT NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+ALTER TABLE isupipe.reservation_slots ADD INDEX idx_start_at_end_at (start_at, end_at);
 
 -- ライブストリームに付与される、サービスで定義されたタグ
+DROP TABLE IF EXISTS `tags`;
 CREATE TABLE `tags` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(255) NOT NULL,
@@ -52,6 +63,7 @@ CREATE TABLE `tags` (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- ライブ配信とタグの中間テーブル
+DROP TABLE IF EXISTS `livestream_tags`;
 CREATE TABLE `livestream_tags` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `livestream_id` BIGINT NOT NULL,
@@ -59,6 +71,7 @@ CREATE TABLE `livestream_tags` (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- ライブ配信視聴履歴
+DROP TABLE IF EXISTS `livestream_viewers_history`;
 CREATE TABLE `livestream_viewers_history` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` BIGINT NOT NULL,
@@ -67,6 +80,7 @@ CREATE TABLE `livestream_viewers_history` (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- ライブ配信に対するライブコメント
+DROP TABLE IF EXISTS `livecomments`;
 CREATE TABLE `livecomments` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` BIGINT NOT NULL,
@@ -75,8 +89,10 @@ CREATE TABLE `livecomments` (
   `tip` BIGINT NOT NULL DEFAULT 0,
   `created_at` BIGINT NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+ALTER TABLE isupipe.livecomments ADD INDEX idx_livestream_id (livestream_id);
 
 -- ユーザからのライブコメントのスパム報告
+DROP TABLE IF EXISTS `livecomment_reports`;
 CREATE TABLE `livecomment_reports` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` BIGINT NOT NULL,
@@ -86,6 +102,7 @@ CREATE TABLE `livecomment_reports` (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- 配信者からのNGワード登録
+DROP TABLE IF EXISTS `ng_words`;
 CREATE TABLE `ng_words` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` BIGINT NOT NULL,
@@ -96,6 +113,7 @@ CREATE TABLE `ng_words` (
 CREATE INDEX ng_words_word ON ng_words(`word`);
 
 -- ライブ配信に対するリアクション
+DROP TABLE IF EXISTS `reactions`;
 CREATE TABLE `reactions` (
   `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` BIGINT NOT NULL,
@@ -104,3 +122,4 @@ CREATE TABLE `reactions` (
   `emoji_name` VARCHAR(255) NOT NULL,
   `created_at` BIGINT NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+ALTER TABLE isupipe.reactions ADD INDEX idx_livestream_id (livestream_id);
