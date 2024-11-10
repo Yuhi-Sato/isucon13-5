@@ -8,14 +8,12 @@ matching_groups:            # array
 - ^/api/tag$
 - ^/api/user/[^/]+/theme$
 - ^/api/livestream/reservation$
-- ^/api/livestream/search$
+- ^/api/livestream/search
 - ^/api/livestream$
 - ^/api/user/[^/]+/livestream$
 - ^/api/livestream/\d+$
-- ^/api/livestream/\d+/livecomment$
-- ^/api/livestream/\d+/livecomment$
-- ^/api/livestream/\d+/reaction$
-- ^/api/livestream/\d+/reaction$
+- ^/api/livestream/\d+/livecomment
+- ^/api/livestream/\d+/reaction
 - ^/api/livestream/\d+/report$
 - ^/api/livestream/\d+/ngwords$
 - ^/api/livestream/\d+/livecomment/\d+/report$
