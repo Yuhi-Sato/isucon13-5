@@ -359,7 +359,7 @@ func moderateHandler(c echo.Context) error {
 
 	// 配信者自身の配信に対するmoderateなのかを検証
 	var ownedLivestreams []LivestreamModel
-	if err := tx.SelectContext(ctx, &ownedLivestreams, "SELECT * FROM livestreams WHERE id = ? AND user_id = ?", livestreamID, userID); err != nil {
+	if err := tx.SelectContext(ctx, &ownedLivestreams, "SELECT id FROM livestreams WHERE id = ? AND user_id = ?", livestreamID, userID); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livestreams: "+err.Error())
 	}
 	if len(ownedLivestreams) == 0 {
@@ -381,37 +381,59 @@ func moderateHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get last inserted NG word id: "+err.Error())
 	}
 
-	var ngwords []*NGWord
-	if err := tx.SelectContext(ctx, &ngwords, "SELECT * FROM ng_words WHERE livestream_id = ?", livestreamID); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get NG words: "+err.Error())
+	var livecommentIDs []int64
+	query := "SELECT l.id FROM livecomments l WHERE l.livestream_id = ? AND l.comment LIKE CONCAT('%', ?, '%')"
+	if err := tx.SelectContext(ctx, &livecommentIDs, query, livestreamID, req.NGWord); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livecomment IDs that hit spams: "+err.Error())
 	}
 
-	// NGワードにヒットする過去の投稿も全削除する
-	for _, ngword := range ngwords {
-		// ライブコメント一覧取得
-		var livecomments []*LivecommentModel
-		if err := tx.SelectContext(ctx, &livecomments, "SELECT * FROM livecomments"); err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livecomments: "+err.Error())
+	query = "DELETE FROM livecomments WHERE id IN (?)"
+	query, args, err := sqlx.In(query, livecommentIDs)
+	if err != nil {
+		if err := tx.Commit(); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to commit: "+err.Error())
 		}
 
-		for _, livecomment := range livecomments {
-			query := `
-			DELETE FROM livecomments
-			WHERE
-			id = ? AND
-			livestream_id = ? AND
-			(SELECT COUNT(*)
-			FROM
-			(SELECT ? AS text) AS texts
-			INNER JOIN
-			(SELECT CONCAT('%', ?, '%')	AS pattern) AS patterns
-			ON texts.text LIKE patterns.pattern) >= 1;
-			`
-			if _, err := tx.ExecContext(ctx, query, livecomment.ID, livestreamID, livecomment.Comment, ngword.Word); err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete old livecomments that hit spams: "+err.Error())
-			}
-		}
+		return c.JSON(http.StatusCreated, map[string]interface{}{
+			"word_id": wordID,
+		})
 	}
+	query = tx.Rebind(query)
+	if _, err := tx.ExecContext(ctx, query, args...); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete livecomments that hit spams: "+err.Error())
+	}
+
+	// var ngwords []*NGWord
+	// if err := tx.SelectContext(ctx, &ngwords, "SELECT * FROM ng_words WHERE livestream_id = ?", livestreamID); err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, "failed to get NG words: "+err.Error())
+	// }
+
+	// // NGワードにヒットする過去の投稿も全削除する
+	// for _, ngword := range ngwords {
+	// 	// ライブコメント一覧取得
+	// 	var livecomments []*LivecommentModel
+	// 	if err := tx.SelectContext(ctx, &livecomments, "SELECT * FROM livecomments"); err != nil {
+	// 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livecomments: "+err.Error())
+	// 	}
+
+	// 	for _, livecomment := range livecomments {
+	// 		query := `
+	// 		DELETE FROM livecomments
+	// 		WHERE
+	// 		id = ? AND
+	// 		livestream_id = ? AND
+	// 		(SELECT COUNT(*)
+	// 		FROM
+	// 		(SELECT ? AS text) AS texts
+	// 		INNER JOIN
+	// 		(SELECT CONCAT('%', ?, '%')	AS pattern) AS patterns
+	// 		ON texts.text LIKE patterns.pattern) >= 1;
+	// 		`
+	// 		if _, err := tx.ExecContext(ctx, query, livecomment.ID, livestreamID, livecomment.Comment, ngword.Word); err != nil {
+	// 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete old livecomments that hit spams: "+err.Error())
+	// 		}
+	// 	}
+	// }
 
 	if err := tx.Commit(); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to commit: "+err.Error())
