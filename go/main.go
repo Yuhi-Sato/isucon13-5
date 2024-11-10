@@ -15,11 +15,9 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
-	echolog "github.com/labstack/gommon/log"
 )
 
 const (
@@ -31,6 +29,7 @@ var (
 	powerDNSSubdomainAddress string
 	dbConn                   *sqlx.DB
 	secret                   = []byte("isucon13_session_cookiestore_defaultsecret")
+	tagById                  = make(map[int64]*Tag)
 )
 
 func init() {
@@ -114,6 +113,17 @@ func initializeHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to initialize: "+err.Error())
 	}
 
+	var tags []*TagModel
+	if err := dbConn.Select(&tags, "SELECT * FROM tags"); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get tags: "+err.Error())
+	}
+	for _, tag := range tags {
+		tagById[tag.ID] = &Tag{
+			ID:   tag.ID,
+			Name: tag.Name,
+		}
+	}
+
 	c.Request().Header.Add("Content-Type", "application/json;charset=utf-8")
 	return c.JSON(http.StatusOK, InitializeResponse{
 		Language: "golang",
@@ -122,9 +132,9 @@ func initializeHandler(c echo.Context) error {
 
 func main() {
 	e := echo.New()
-	e.Debug = true
-	e.Logger.SetLevel(echolog.DEBUG)
-	e.Use(middleware.Logger())
+	// e.Debug = true
+	// e.Logger.SetLevel(echolog.DEBUG)
+	// e.Use(middleware.Logger())
 	cookieStore := sessions.NewCookieStore(secret)
 	cookieStore.Options.Domain = "*.t.isucon.pw"
 	e.Use(session.Middleware(cookieStore))
