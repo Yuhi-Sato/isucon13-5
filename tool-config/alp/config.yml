@@ -4,5 +4,31 @@ reverse: true                   # boolean
 query_string: true              # boolean
 output: count,5xx,4xx,3xx,method,uri,min,max,sum,avg,p99                    # string(comma separated)
 
-# matching_groups:            # array
-# -  
+matching_groups:            # array
+- ^/api/tag$
+- ^/api/user/[^/]+/theme$
+- ^/api/livestream/reservation$
+- ^/api/livestream/search$
+- ^/api/livestream$
+- ^/api/user/[^/]+/livestream$
+- ^/api/livestream/\d+$
+- ^/api/livestream/\d+/livecomment$
+- ^/api/livestream/\d+/livecomment$
+- ^/api/livestream/\d+/reaction$
+- ^/api/livestream/\d+/reaction$
+- ^/api/livestream/\d+/report$
+- ^/api/livestream/\d+/ngwords$
+- ^/api/livestream/\d+/livecomment/\d+/report$
+- ^/api/livestream/\d+/moderate$
+- ^/api/livestream/\d+/enter$
+- ^/api/livestream/\d+/exit$
+- ^/api/register$
+- ^/api/login$
+- ^/api/user/me$
+- ^/api/user/[^/]+$
+- ^/api/user/[^/]+/statistics$
+- ^/api/user/[^/]+/icon$
+- ^/api/icon$
+- ^/api/livestream/\d+/statistics$
+- ^/api/payment$
+
