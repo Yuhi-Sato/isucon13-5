@@ -388,10 +388,7 @@ func moderateHandler(c echo.Context) error {
 	}
 
 	query = "DELETE FROM livecomments WHERE id IN (?)"
-	query, args, err := sqlx.In(query, livecommentIDs)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate query: "+err.Error())
-	}
+	query, args, _ := sqlx.In(query, livecommentIDs)
 	query = tx.Rebind(query)
 	if _, err := tx.ExecContext(ctx, query, args...); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete livecomments that hit spams: "+err.Error())
