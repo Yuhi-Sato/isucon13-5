@@ -429,9 +429,7 @@ func fillUserResponse(ctx context.Context, tx *sqlx.Tx, userModel UserModel) (Us
 		if !errors.Is(err, sql.ErrNoRows) {
 			return User{}, err
 		}
-	}
 
-	if iconHash == "" {
 		iconHash = fallbackImageHash
 	}
 

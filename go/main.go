@@ -124,6 +124,8 @@ func initializeHandler(c echo.Context) error {
 	}
 	fallbackImageHash = fmt.Sprintf("%x", sha256.Sum256(fallbackImageByte))
 
+	log.Print(fallbackImageHash)
+
 	var tags []TagModel
 	if err := dbConn.Select(&tags, "SELECT * FROM tags"); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get tags: "+err.Error())
