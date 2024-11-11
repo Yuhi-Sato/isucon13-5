@@ -156,7 +156,7 @@ func postIconHandler(c echo.Context) error {
 	}
 	defer tx.Rollback()
 
-	iconHash := sha256.Sum256(req.Image)
+	iconHash := fmt.Sprintf("%x", sha256.Sum256(req.Image))
 
 	rs, err := tx.ExecContext(ctx, "REPLACE INTO icons (user_id, image, icon_hash) VALUES (?, ?, ?)", userID, req.Image, iconHash)
 	if err != nil {
