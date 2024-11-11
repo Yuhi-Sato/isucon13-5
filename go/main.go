@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/exec"
 	"strconv"
@@ -141,6 +142,10 @@ func initializeHandler(c echo.Context) error {
 }
 
 func main() {
+	go func() {
+		log.Fatal(http.ListenAndServe(":6060", nil))
+	}()
+
 	e := echo.New()
 	// e.Debug = true
 	// e.Logger.SetLevel(echolog.DEBUG)
