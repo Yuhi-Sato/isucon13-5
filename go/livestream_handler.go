@@ -43,15 +43,15 @@ type LivestreamModel struct {
 }
 
 type Livestream struct {
-	ID           int64  `json:"id"`
-	Owner        User   `json:"owner"`
-	Title        string `json:"title"`
-	Description  string `json:"description"`
-	PlaylistUrl  string `json:"playlist_url"`
-	ThumbnailUrl string `json:"thumbnail_url"`
-	Tags         []Tag  `json:"tags"`
-	StartAt      int64  `json:"start_at"`
-	EndAt        int64  `json:"end_at"`
+	ID           int64  `json:"id" db:"id"`
+	Owner        User   `json:"owner" db:"owner"`
+	Title        string `json:"title" db:"title"`
+	Description  string `json:"description" db:"description"`
+	PlaylistUrl  string `json:"playlist_url" db:"playlist_url"`
+	ThumbnailUrl string `json:"thumbnail_url" db:"thumbnail_url"`
+	Tags         []Tag  `json:"tags" db:"tags"`
+	StartAt      int64  `json:"start_at" db:"start_at"`
+	EndAt        int64  `json:"end_at" db:"end_at"`
 }
 
 type LivestreamTagModel struct {
