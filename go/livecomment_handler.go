@@ -95,6 +95,7 @@ func getLivecommentsHandler(c echo.Context) error {
 		u.name AS 'user.name',
 		u.display_name AS 'user.display_name',
 		u.description AS 'user.description',
+		ls.id AS 'livestream.id',
 		ls.title AS 'livestream.title',
 		ls.description AS 'livestream.description',
 		ls.playlist_url AS 'livestream.playlist_url',
