@@ -133,10 +133,10 @@ func getLivecommentsHandler(c echo.Context) error {
 			DisplayName: livecomments[i].User.DisplayName,
 			Description: livecomments[i].User.Description,
 		}
-		commentOwner, err := fillUserResponse(ctx, tx, commentOwnerModel)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
-		}
+		commentOwner, _ := fillUserResponse(ctx, tx, commentOwnerModel)
+		// if err != nil {
+		// return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
+		// }
 
 		livestreamModel := LivestreamModel{
 			Title:        livecomments[i].Livestream.Title,
@@ -146,10 +146,10 @@ func getLivecommentsHandler(c echo.Context) error {
 			StartAt:      livecomments[i].Livestream.StartAt,
 			EndAt:        livecomments[i].Livestream.EndAt,
 		}
-		livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
-		}
+		livestream, _ := fillLivestreamResponse(ctx, tx, livestreamModel)
+		// if err != nil {
+		// 	return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
+		// }
 
 		livecomments[i].User = commentOwner
 		livecomments[i].Livestream = livestream
