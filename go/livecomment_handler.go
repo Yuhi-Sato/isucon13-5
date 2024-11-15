@@ -135,8 +135,7 @@ func getLivecommentsHandler(c echo.Context) error {
 		}
 		commentOwner, err := fillUserResponse(ctx, tx, commentOwnerModel)
 		if err != nil {
-			livecomments[i] = Livecomment{}
-			continue
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
 
 		livestreamModel := LivestreamModel{
@@ -149,8 +148,7 @@ func getLivecommentsHandler(c echo.Context) error {
 		}
 		livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
 		if err != nil {
-			livecomments[i] = Livecomment{}
-			continue
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
 
 		livecomment := Livecomment{
