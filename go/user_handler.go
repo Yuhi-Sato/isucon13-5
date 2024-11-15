@@ -104,6 +104,25 @@ func getIconHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user: "+err.Error())
 	}
 
+<<<<<<< Updated upstream
+=======
+	// NOTE: 先にicon_hashを取得しておく
+	var iconHash string
+	if err := tx.GetContext(ctx, &iconHash, "SELECT icon_hash FROM icons WHERE user_id = ?", user.ID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return c.File(fallbackImage)
+		} else {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user icon hash: "+err.Error())
+		}
+	}
+
+	// NOTE: icon_hashが一致しているか確認
+	etag := c.Request().Header.Get("If-None-Match")
+	if etag != "" && strings.Contains(etag, iconHash) {
+		return c.NoContent(http.StatusNotModified)
+	}
+
+>>>>>>> Stashed changes
 	var image []byte
 	if err := tx.GetContext(ctx, &image, "SELECT image FROM icons WHERE user_id = ?", user.ID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -431,7 +450,7 @@ func fillUserResponse(ctx context.Context, tx *sqlx.Tx, userModel UserModel) (Us
 			ID:       themeModel.ID,
 			DarkMode: themeModel.DarkMode,
 		},
-		IconHash: fmt.Sprintf("%x", iconHash),
+		IconHash: iconHash,
 	}
 
 	return user, nil

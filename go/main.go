@@ -115,6 +115,15 @@ func initializeHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to initialize: "+err.Error())
 	}
 
+<<<<<<< Updated upstream
+=======
+	fallbackImageByte, err := os.ReadFile(fallbackImage)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to read fallback image: "+err.Error())
+	}
+	fallbackImageHash = fmt.Sprintf("%x", sha256.Sum256(fallbackImageByte))
+
+>>>>>>> Stashed changes
 	var tags []TagModel
 	if err := dbConn.Select(&tags, "SELECT * FROM tags"); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get tags: "+err.Error())
