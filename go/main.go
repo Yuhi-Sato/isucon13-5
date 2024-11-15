@@ -4,10 +4,12 @@ package main
 // sqlx的な参考: https://jmoiron.github.io/sqlx/
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/exec"
 	"strconv"
@@ -32,6 +34,7 @@ var (
 	secret                   = []byte("isucon13_session_cookiestore_defaultsecret")
 	tagById                  = make(map[int64]*Tag)
 	themeByUserId            sync.Map
+	fallbackImageHash        string
 )
 
 func init() {
@@ -115,6 +118,14 @@ func initializeHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to initialize: "+err.Error())
 	}
 
+	fallbackImageByte, err := os.ReadFile(fallbackImage)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to read fallback image: "+err.Error())
+	}
+	fallbackImageHash = fmt.Sprintf("%x", sha256.Sum256(fallbackImageByte))
+
+	log.Print(fallbackImageHash)
+
 	var tags []TagModel
 	if err := dbConn.Select(&tags, "SELECT * FROM tags"); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get tags: "+err.Error())
@@ -141,6 +152,10 @@ func initializeHandler(c echo.Context) error {
 }
 
 func main() {
+	go func() {
+		log.Fatal(http.ListenAndServe(":6060", nil))
+	}()
+
 	e := echo.New()
 	// e.Debug = true
 	// e.Logger.SetLevel(echolog.DEBUG)

@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -97,11 +97,27 @@ func getIconHandler(c echo.Context) error {
 	defer tx.Rollback()
 
 	var user UserModel
-	if err := tx.GetContext(ctx, &user, "SELECT * FROM users WHERE name = ?", username); err != nil {
+	if err := tx.GetContext(ctx, &user, "SELECT id FROM users WHERE name = ?", username); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return echo.NewHTTPError(http.StatusNotFound, "not found user that has the given username")
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user: "+err.Error())
+	}
+
+	// NOTE: 先にicon_hashを取得しておく
+	var iconHash string
+	if err := tx.GetContext(ctx, &iconHash, "SELECT icon_hash FROM icons WHERE user_id = ?", user.ID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return c.File(fallbackImage)
+		} else {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user icon hash: "+err.Error())
+		}
+	}
+
+	// NOTE: icon_hashが一致しているか確認
+	etag := c.Request().Header.Get("If-None-Match")
+	if strings.Contains(etag, iconHash) {
+		return c.NoContent(http.StatusNotModified)
 	}
 
 	var image []byte
@@ -140,11 +156,9 @@ func postIconHandler(c echo.Context) error {
 	}
 	defer tx.Rollback()
 
-	if _, err := tx.ExecContext(ctx, "DELETE FROM icons WHERE user_id = ?", userID); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete old user icon: "+err.Error())
-	}
+	iconHash := fmt.Sprintf("%x", sha256.Sum256(req.Image))
 
-	rs, err := tx.ExecContext(ctx, "INSERT INTO icons (user_id, image) VALUES (?, ?)", userID, req.Image)
+	rs, err := tx.ExecContext(ctx, "REPLACE INTO icons (user_id, image, icon_hash) VALUES (?, ?, ?)", userID, req.Image, iconHash)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to insert new user icon: "+err.Error())
 	}
@@ -410,17 +424,14 @@ func fillUserResponse(ctx context.Context, tx *sqlx.Tx, userModel UserModel) (Us
 		themeByUserId.Store(userModel.ID, themeModel)
 	}
 
-	var image []byte
-	if err := tx.GetContext(ctx, &image, "SELECT image FROM icons WHERE user_id = ?", userModel.ID); err != nil {
+	var iconHash string
+	if err := tx.GetContext(ctx, &iconHash, "SELECT icon_hash FROM icons WHERE user_id = ?", userModel.ID); err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			return User{}, err
 		}
-		image, err = os.ReadFile(fallbackImage)
-		if err != nil {
-			return User{}, err
-		}
+
+		iconHash = fallbackImageHash
 	}
-	iconHash := sha256.Sum256(image)
 
 	user := User{
 		ID:          userModel.ID,
