@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -136,6 +137,7 @@ func getLivecommentsHandler(c echo.Context) error {
 		}
 		commentOwner, err := fillUserResponse(ctx, tx, commentOwnerModel)
 		if err != nil {
+			log.Print(err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
 
@@ -150,6 +152,7 @@ func getLivecommentsHandler(c echo.Context) error {
 		}
 		livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
 		if err != nil {
+			log.Print(err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
 
