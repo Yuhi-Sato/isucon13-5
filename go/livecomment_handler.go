@@ -102,9 +102,9 @@ func getLivecommentsHandler(c echo.Context) error {
 		ls.start_at AS 'livestream.start_at',
 		ls.end_at AS 'livestream.end_at'
 	FROM livecomments lc
-	INNER JOIN users u
+	LEFT JOIN users u
 		ON lc.user_id = u.id
-	INNER JOIN livestreams ls
+	LEFT JOIN livestreams ls
 		ON lc.livestream_id = ls.id
 	WHERE lc.livestream_id = ?
 	ORDER BY lc.created_at DESC
@@ -134,7 +134,7 @@ func getLivecommentsHandler(c echo.Context) error {
 			Description: livecomments[i].User.Description,
 		}
 		commentOwner, err := fillUserResponse(ctx, tx, commentOwnerModel)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
 
