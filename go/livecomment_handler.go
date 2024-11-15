@@ -136,13 +136,14 @@ func getLivecommentsHandler(c echo.Context) error {
 			Description: livecomments[i].User.Description,
 		}
 		commentOwner, err := fillUserResponse(ctx, tx, commentOwnerModel)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err != nil {
 			log.Print(err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
 
 		livestreamModel := LivestreamModel{
 			ID:           livecomments[i].Livestream.ID,
+			UserID:       livecomments[i].User.ID,
 			Title:        livecomments[i].Livestream.Title,
 			Description:  livecomments[i].Livestream.Description,
 			PlaylistUrl:  livecomments[i].Livestream.PlaylistUrl,
@@ -151,7 +152,7 @@ func getLivecommentsHandler(c echo.Context) error {
 			EndAt:        livecomments[i].Livestream.EndAt,
 		}
 		livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err != nil {
 			log.Print(err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
