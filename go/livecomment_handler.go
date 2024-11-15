@@ -151,8 +151,12 @@ func getLivecommentsHandler(c echo.Context) error {
 		// 	return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		// }
 
-		livecomments[i].User = commentOwner
-		livecomments[i].Livestream = livestream
+		if livecomments[i].User.ID > 0 {
+			livecomments[i].User = commentOwner
+		}
+		if livestream.ID > 0 {
+			livecomments[i].Livestream = livestream
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
