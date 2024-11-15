@@ -140,6 +140,7 @@ func getLivecommentsHandler(c echo.Context) error {
 		}
 
 		livestreamModel := LivestreamModel{
+			ID:           livecomments[i].Livestream.ID,
 			Title:        livecomments[i].Livestream.Title,
 			Description:  livecomments[i].Livestream.Description,
 			PlaylistUrl:  livecomments[i].Livestream.PlaylistUrl,
