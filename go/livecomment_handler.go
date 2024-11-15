@@ -147,7 +147,7 @@ func getLivecommentsHandler(c echo.Context) error {
 			EndAt:        livecomments[i].Livestream.EndAt,
 		}
 		livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
 
