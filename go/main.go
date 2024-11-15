@@ -35,6 +35,7 @@ var (
 	tagById                  = make(map[int64]*Tag)
 	themeByUserId            sync.Map
 	fallbackImageHash        string
+	iconHashByUserId         sync.Map
 )
 
 func init() {
