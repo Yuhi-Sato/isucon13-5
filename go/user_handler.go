@@ -163,7 +163,7 @@ func postIconHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to insert new user icon: "+err.Error())
 	}
 
-	iconHashByUserId.Delete(userID)
+	iconHashByUserId.Set(userID, iconHash)
 
 	iconID, err := rs.LastInsertId()
 	if err != nil {
@@ -427,8 +427,8 @@ func fillUserResponse(ctx context.Context, tx *sqlx.Tx, userModel UserModel) (Us
 	}
 
 	var iconHash string
-	if v, ok := iconHashByUserId.Load(userModel.ID); ok {
-		iconHash = v.(string)
+	if v, ok := iconHashByUserId.Get(userModel.ID); ok {
+		iconHash = v
 	} else {
 		if err := tx.GetContext(ctx, &iconHash, "SELECT icon_hash FROM icons WHERE user_id = ?", userModel.ID); err != nil {
 			if !errors.Is(err, sql.ErrNoRows) {
@@ -438,7 +438,7 @@ func fillUserResponse(ctx context.Context, tx *sqlx.Tx, userModel UserModel) (Us
 			iconHash = fallbackImageHash
 		}
 
-		iconHashByUserId.Store(userModel.ID, iconHash)
+		iconHashByUserId.Set(userModel.ID, iconHash)
 	}
 
 	user := User{

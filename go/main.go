@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"sync"
 
 	"github.com/catatsuy/cache"
 	"github.com/go-sql-driver/mysql"
@@ -36,7 +35,7 @@ var (
 	tagById                  = make(map[int64]*Tag)
 	themeByUserId            = cache.NewReadHeavyCache[int64, ThemeModel]()
 	fallbackImageHash        string
-	iconHashByUserId         sync.Map
+	iconHashByUserId         = cache.NewReadHeavyCache[int64, string]()
 )
 
 func init() {
