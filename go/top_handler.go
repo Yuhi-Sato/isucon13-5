@@ -81,14 +81,14 @@ func getStreamerThemeHandler(c echo.Context) error {
 	}
 
 	themeModel := ThemeModel{}
-	if v, ok := themeByUserId.Load(userModel.ID); ok {
-		themeModel = v.(ThemeModel)
+	if v, ok := themeByUserId.Get(userModel.ID); ok {
+		themeModel = v
 	} else {
 		if err := tx.GetContext(ctx, &themeModel, "SELECT * FROM themes WHERE user_id = ?", userModel.ID); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user theme: "+err.Error())
 		}
 
-		themeByUserId.Store(userModel.ID, themeModel)
+		themeByUserId.Set(userModel.ID, themeModel)
 	}
 
 	if err := tx.Commit(); err != nil {

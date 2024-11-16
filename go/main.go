@@ -13,8 +13,8 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"sync"
 
+	"github.com/catatsuy/cache"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
@@ -33,9 +33,9 @@ var (
 	dbConn                   *sqlx.DB
 	secret                   = []byte("isucon13_session_cookiestore_defaultsecret")
 	tagById                  = make(map[int64]*Tag)
-	themeByUserId            sync.Map
+	themeByUserId            = cache.NewReadHeavyCache[int64, ThemeModel]()
 	fallbackImageHash        string
-	iconHashByUserId         sync.Map
+	iconHashByUserId         = cache.NewReadHeavyCache[int64, string]()
 )
 
 func init() {
@@ -141,7 +141,7 @@ func initializeHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get themes: "+err.Error())
 	}
 	for _, theme := range themes {
-		themeByUserId.Store(theme.UserID, theme)
+		themeByUserId.Set(theme.UserID, theme)
 	}
 
 	c.Request().Header.Add("Content-Type", "application/json;charset=utf-8")
