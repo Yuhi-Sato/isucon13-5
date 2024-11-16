@@ -493,7 +493,7 @@ func fillLivestreamResponse(ctx context.Context, tx *sqlx.Tx, livestreamModel Li
 
 		userByUserId.Set(livestreamModel.UserID, ownerModel)
 	}
-	owner, err := fillUserResponse(ctx, tx, ownerModel)
+	owner, err := fillUserResponse(ctx, ownerModel)
 	if err != nil {
 		return Livestream{}, err
 	}

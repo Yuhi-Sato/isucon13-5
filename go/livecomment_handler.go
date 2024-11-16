@@ -134,7 +134,7 @@ func getLivecommentsHandler(c echo.Context) error {
 			DisplayName: livecomments[i].User.DisplayName,
 			Description: livecomments[i].User.Description,
 		}
-		commentOwner, err := fillUserResponse(ctx, tx, commentOwnerModel)
+		commentOwner, err := fillUserResponse(ctx, commentOwnerModel)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
@@ -489,7 +489,7 @@ func fillLivecommentResponse(ctx context.Context, tx *sqlx.Tx, livecommentModel 
 
 		userByUserId.Set(commentOwnerModel.ID, commentOwnerModel)
 	}
-	commentOwner, err := fillUserResponse(ctx, tx, commentOwnerModel)
+	commentOwner, err := fillUserResponse(ctx, commentOwnerModel)
 	if err != nil {
 		return Livecomment{}, err
 	}
@@ -524,7 +524,7 @@ func fillLivecommentReportResponse(ctx context.Context, tx *sqlx.Tx, reportModel
 
 		userByUserId.Set(reporterModel.ID, reporterModel)
 	}
-	reporter, err := fillUserResponse(ctx, tx, reporterModel)
+	reporter, err := fillUserResponse(ctx, reporterModel)
 	if err != nil {
 		return LivecommentReport{}, err
 	}
