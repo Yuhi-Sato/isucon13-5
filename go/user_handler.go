@@ -415,10 +415,8 @@ func verifyUserSession(c echo.Context) error {
 }
 
 func fillUserResponse(ctx context.Context, tx *sqlx.Tx, userModel UserModel) (User, error) {
-	themeModel := ThemeModel{}
-	if v, ok := themeByUserId.Get(userModel.ID); ok {
-		themeModel = v
-	} else {
+	themeModel, ok := themeByUserId.Get(userModel.ID)
+	if !ok {
 		if err := tx.GetContext(ctx, &themeModel, "SELECT * FROM themes WHERE user_id = ?", userModel.ID); err != nil {
 			return User{}, err
 		}
@@ -426,10 +424,8 @@ func fillUserResponse(ctx context.Context, tx *sqlx.Tx, userModel UserModel) (Us
 		themeByUserId.Set(userModel.ID, themeModel)
 	}
 
-	var iconHash string
-	if v, ok := iconHashByUserId.Get(userModel.ID); ok {
-		iconHash = v
-	} else {
+	iconHash, ok := iconHashByUserId.Get(userModel.ID)
+	if !ok {
 		if err := tx.GetContext(ctx, &iconHash, "SELECT icon_hash FROM icons WHERE user_id = ?", userModel.ID); err != nil {
 			if !errors.Is(err, sql.ErrNoRows) {
 				return User{}, err
