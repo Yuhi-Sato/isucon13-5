@@ -256,7 +256,7 @@ func searchLivestreamsHandler(c echo.Context) error {
 		}
 
 		tags := make([]Tag, len(livestreams[i].Tags))
-		for i, t := range livestreams[i].LiveStreamTags {
+		for i, t := range livestreams[i].LivestreamTags {
 			tags[i] = Tag{
 				ID:   t.TagID,
 				Name: tagById[t.TagID].Name,
