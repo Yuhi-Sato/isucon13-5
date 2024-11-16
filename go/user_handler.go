@@ -416,14 +416,14 @@ func verifyUserSession(c echo.Context) error {
 
 func fillUserResponse(ctx context.Context, tx *sqlx.Tx, userModel UserModel) (User, error) {
 	themeModel := ThemeModel{}
-	if v, ok := themeByUserId.Load(userModel.ID); ok {
-		themeModel = v.(ThemeModel)
+	if v, ok := themeByUserId.Get(userModel.ID); ok {
+		themeModel = v
 	} else {
 		if err := tx.GetContext(ctx, &themeModel, "SELECT * FROM themes WHERE user_id = ?", userModel.ID); err != nil {
 			return User{}, err
 		}
 
-		themeByUserId.Store(userModel.ID, themeModel)
+		themeByUserId.Set(userModel.ID, themeModel)
 	}
 
 	var iconHash string
