@@ -43,15 +43,16 @@ type LivestreamModel struct {
 }
 
 type Livestream struct {
-	ID           int64  `json:"id" db:"id"`
-	Owner        User   `json:"owner" db:"owner"`
-	Title        string `json:"title" db:"title"`
-	Description  string `json:"description" db:"description"`
-	PlaylistUrl  string `json:"playlist_url" db:"playlist_url"`
-	ThumbnailUrl string `json:"thumbnail_url" db:"thumbnail_url"`
-	Tags         []Tag  `json:"tags" db:"tags"`
-	StartAt      int64  `json:"start_at" db:"start_at"`
-	EndAt        int64  `json:"end_at" db:"end_at"`
+	ID             int64                `json:"id" db:"id"`
+	Owner          User                 `json:"owner" db:"owner"`
+	Title          string               `json:"title" db:"title"`
+	Description    string               `json:"description" db:"description"`
+	PlaylistUrl    string               `json:"playlist_url" db:"playlist_url"`
+	ThumbnailUrl   string               `json:"thumbnail_url" db:"thumbnail_url"`
+	Tags           []Tag                `json:"tags" db:"tags"`
+	LiveStreamTags []LivestreamTagModel `json:"live_stream_tags" db:"livestream_tags"`
+	StartAt        int64                `json:"start_at" db:"start_at"`
+	EndAt          int64                `json:"end_at" db:"end_at"`
 }
 
 type LivestreamTagModel struct {
@@ -180,7 +181,7 @@ func searchLivestreamsHandler(c echo.Context) error {
 	}
 	defer tx.Rollback()
 
-	var livestreamModels []*LivestreamModel
+	var livestreams []*Livestream
 	if c.QueryParam("tag") != "" {
 		// タグによる取得
 		var tagIDList []int
@@ -188,23 +189,38 @@ func searchLivestreamsHandler(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get tags: "+err.Error())
 		}
 
-		query, params, err := sqlx.In("SELECT * FROM livestream_tags WHERE tag_id IN (?) ORDER BY livestream_id DESC", tagIDList)
+		query := `
+			SELECT
+				ls.*,
+				lt.tag_id as 'livestream_tags.tag_id',
+				u.id as 'owner.id',
+				u.name as 'owner.name',
+				u.display_name as 'owner.display_name',
+				u.description as 'owner.description',
+			FROM livestreams ls
+			INNER JOIN livestream_tags lt ON ls.id = lt.livestream_id
+			INNER JOIN users u ON ls.user_id = u.id
+			WHERE lt.tag_id IN (?)
+			ORDER BY lt.livestream_id DESC
+		`
+
+		query, params, err := sqlx.In(query, tagIDList)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to construct IN query: "+err.Error())
 		}
-		var keyTaggedLivestreams []*LivestreamTagModel
-		if err := tx.SelectContext(ctx, &keyTaggedLivestreams, query, params...); err != nil {
+		// var keyTaggedLivestreams []*LivestreamTagModel
+		if err := tx.SelectContext(ctx, &livestreams, query, params...); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get keyTaggedLivestreams: "+err.Error())
 		}
 
-		for _, keyTaggedLivestream := range keyTaggedLivestreams {
-			ls := LivestreamModel{}
-			if err := tx.GetContext(ctx, &ls, "SELECT * FROM livestreams WHERE id = ?", keyTaggedLivestream.LivestreamID); err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livestreams: "+err.Error())
-			}
+		// for _, keyTaggedLivestream := range keyTaggedLivestreams {
+		// 	ls := LivestreamModel{}
+		// 	if err := tx.GetContext(ctx, &ls, "SELECT * FROM livestreams WHERE id = ?", keyTaggedLivestream.LivestreamID); err != nil {
+		// 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livestreams: "+err.Error())
+		// 	}
 
-			livestreamModels = append(livestreamModels, &ls)
-		}
+		// 	livestreamModels = append(livestreamModels, &ls)
+		// }
 	} else {
 		// 検索条件なし
 		query := `SELECT * FROM livestreams ORDER BY id DESC`
@@ -216,18 +232,34 @@ func searchLivestreamsHandler(c echo.Context) error {
 			query += fmt.Sprintf(" LIMIT %d", limit)
 		}
 
-		if err := tx.SelectContext(ctx, &livestreamModels, query); err != nil {
+		if err := tx.SelectContext(ctx, &livestreams, query); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livestreams: "+err.Error())
 		}
 	}
 
-	livestreams := make([]Livestream, len(livestreamModels))
-	for i := range livestreamModels {
-		livestream, err := fillLivestreamResponse(ctx, tx, *livestreamModels[i])
+	// livestreams := make([]Livestream, len(livestreamModels))
+	for i := range livestreams {
+		ownerModel := UserModel{
+			ID:          livestreams[i].Owner.ID,
+			Name:        livestreams[i].Owner.Name,
+			DisplayName: livestreams[i].Owner.DisplayName,
+			Description: livestreams[i].Owner.Description,
+		}
+		owner, err := fillUserResponse(ctx, tx, ownerModel)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fill livestream: "+err.Error())
 		}
-		livestreams[i] = livestream
+
+		tags := make([]Tag, len(livestreams[i].Tags))
+		for i, t := range livestreams[i].LiveStreamTags {
+			tags[i] = Tag{
+				ID:   t.TagID,
+				Name: tagById[t.TagID].Name,
+			}
+		}
+
+		livestreams[i].Owner = owner
+		livestreams[i].Tags = tags
 	}
 
 	if err := tx.Commit(); err != nil {
