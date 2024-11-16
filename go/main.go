@@ -37,6 +37,7 @@ var (
 	fallbackImageHash            string
 	iconHashByUserId             = cache.NewReadHeavyCache[int64, string]()
 	livestreamTagsByLivestreamId = cache.NewReadHeavyCache[int64, []LivestreamTagModel]()
+	userByUserId                 = cache.NewReadHeavyCache[int64, UserModel]()
 )
 
 func init() {
@@ -157,6 +158,14 @@ func initializeHandler(c echo.Context) error {
 		} else {
 			livestreamTagsByLivestreamId.Set(livestreamTag.LivestreamID, []LivestreamTagModel{livestreamTag})
 		}
+	}
+
+	var users []UserModel
+	if err := dbConn.Select(&users, "SELECT * FROM users"); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get users: "+err.Error())
+	}
+	for _, user := range users {
+		userByUserId.Set(user.ID, user)
 	}
 
 	c.Request().Header.Add("Content-Type", "application/json;charset=utf-8")
