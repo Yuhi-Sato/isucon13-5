@@ -505,6 +505,41 @@ func fillLivecommentResponse(ctx context.Context, tx *sqlx.Tx, livecommentModel 
 	return livecomment, nil
 }
 
+func fillLivecommentResponseWithoutTx(ctx context.Context, livecommentModel LivecommentModel) (Livecomment, error) {
+	commentOwnerModel, ok := userByUserId.Get(livecommentModel.UserID)
+	if !ok {
+		if err := dbConn.GetContext(ctx, &commentOwnerModel, "SELECT * FROM users WHERE id = ?", livecommentModel.UserID); err != nil {
+			return Livecomment{}, err
+		}
+
+		userByUserId.Set(commentOwnerModel.ID, commentOwnerModel)
+	}
+	commentOwner, err := fillUserResponseWithoutTx(ctx, commentOwnerModel)
+	if err != nil {
+		return Livecomment{}, err
+	}
+
+	livestreamModel := LivestreamModel{}
+	if err := dbConn.GetContext(ctx, &livestreamModel, "SELECT * FROM livestreams WHERE id = ?", livecommentModel.LivestreamID); err != nil {
+		return Livecomment{}, err
+	}
+	livestream, err := fillLivestreamResponseWithoutTx(ctx, livestreamModel)
+	if err != nil {
+		return Livecomment{}, err
+	}
+
+	livecomment := Livecomment{
+		ID:         livecommentModel.ID,
+		User:       commentOwner,
+		Livestream: livestream,
+		Comment:    livecommentModel.Comment,
+		Tip:        livecommentModel.Tip,
+		CreatedAt:  livecommentModel.CreatedAt,
+	}
+
+	return livecomment, nil
+}
+
 func fillLivecommentReportResponse(ctx context.Context, tx *sqlx.Tx, reportModel LivecommentReportModel) (LivecommentReport, error) {
 	reporterModel, ok := userByUserId.Get(reportModel.UserID)
 	if !ok {
@@ -524,6 +559,38 @@ func fillLivecommentReportResponse(ctx context.Context, tx *sqlx.Tx, reportModel
 		return LivecommentReport{}, err
 	}
 	livecomment, err := fillLivecommentResponse(ctx, tx, livecommentModel)
+	if err != nil {
+		return LivecommentReport{}, err
+	}
+
+	report := LivecommentReport{
+		ID:          reportModel.ID,
+		Reporter:    reporter,
+		Livecomment: livecomment,
+		CreatedAt:   reportModel.CreatedAt,
+	}
+	return report, nil
+}
+
+func fillLivecommentReportResponseWithoutTx(ctx context.Context, reportModel LivecommentReportModel) (LivecommentReport, error) {
+	reporterModel, ok := userByUserId.Get(reportModel.UserID)
+	if !ok {
+		if err := dbConn.GetContext(ctx, &reporterModel, "SELECT * FROM users WHERE id = ?", reportModel.UserID); err != nil {
+			return LivecommentReport{}, err
+		}
+
+		userByUserId.Set(reporterModel.ID, reporterModel)
+	}
+	reporter, err := fillUserResponseWithoutTx(ctx, reporterModel)
+	if err != nil {
+		return LivecommentReport{}, err
+	}
+
+	livecommentModel := LivecommentModel{}
+	if err := dbConn.GetContext(ctx, &livecommentModel, "SELECT * FROM livecomments WHERE id = ?", reportModel.LivecommentID); err != nil {
+		return LivecommentReport{}, err
+	}
+	livecomment, err := fillLivecommentResponseWithoutTx(ctx, livecommentModel)
 	if err != nil {
 		return LivecommentReport{}, err
 	}
