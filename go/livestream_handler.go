@@ -485,18 +485,26 @@ func getLivecommentReportsHandler(c echo.Context) error {
 }
 
 func fillLivestreamResponse(ctx context.Context, tx *sqlx.Tx, livestreamModel LivestreamModel) (Livestream, error) {
-	ownerModel := UserModel{}
-	if err := tx.GetContext(ctx, &ownerModel, "SELECT * FROM users WHERE id = ?", livestreamModel.UserID); err != nil {
-		return Livestream{}, err
+	ownerModel, ok := userByUserId.Get(livestreamModel.UserID)
+	if !ok {
+		if err := tx.GetContext(ctx, &ownerModel, "SELECT * FROM users WHERE id = ?", livestreamModel.UserID); err != nil {
+			return Livestream{}, err
+		}
+
+		userByUserId.Set(livestreamModel.UserID, ownerModel)
 	}
 	owner, err := fillUserResponse(ctx, tx, ownerModel)
 	if err != nil {
 		return Livestream{}, err
 	}
 
-	var livestreamTagModels []*LivestreamTagModel
-	if err := tx.SelectContext(ctx, &livestreamTagModels, "SELECT * FROM livestream_tags WHERE livestream_id = ?", livestreamModel.ID); err != nil {
-		return Livestream{}, err
+	livestreamTagModels, ok := livestreamTagsByLivestreamId.Get(livestreamModel.ID)
+	if !ok {
+		if err := tx.SelectContext(ctx, &livestreamTagModels, "SELECT * FROM livestream_tags WHERE livestream_id = ?", livestreamModel.ID); err != nil {
+			return Livestream{}, err
+		}
+
+		livestreamTagsByLivestreamId.Set(livestreamModel.ID, livestreamTagModels)
 	}
 
 	tags := make([]Tag, len(livestreamTagModels))

@@ -142,9 +142,13 @@ func postReactionHandler(c echo.Context) error {
 }
 
 func fillReactionResponse(ctx context.Context, tx *sqlx.Tx, reactionModel ReactionModel) (Reaction, error) {
-	userModel := UserModel{}
-	if err := tx.GetContext(ctx, &userModel, "SELECT * FROM users WHERE id = ?", reactionModel.UserID); err != nil {
-		return Reaction{}, err
+	userModel, ok := userByUserId.Get(reactionModel.UserID)
+	if !ok {
+		if err := tx.GetContext(ctx, &userModel, "SELECT * FROM users WHERE id = ?", reactionModel.UserID); err != nil {
+			return Reaction{}, err
+		}
+
+		userByUserId.Set(userModel.ID, userModel)
 	}
 	user, err := fillUserResponse(ctx, tx, userModel)
 	if err != nil {
