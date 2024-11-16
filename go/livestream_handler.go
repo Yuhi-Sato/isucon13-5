@@ -191,7 +191,12 @@ func searchLivestreamsHandler(c echo.Context) error {
 
 		query := `
 			SELECT
-				ls.*,
+				ls.id as 'id',
+				ls.title as 'title',
+				ls.description as 'description',
+				ls.playlist_url as 'playlist_url',
+				ls.thumbnail_url as 'thumbnail_url',
+				ls.start_at as 'start_at',
 				lt.tag_id as 'livestream_tags.tag_id',
 				u.id as 'owner.id',
 				u.name as 'owner.name',
