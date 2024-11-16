@@ -50,7 +50,7 @@ type Livestream struct {
 	PlaylistUrl    string               `json:"playlist_url" db:"playlist_url"`
 	ThumbnailUrl   string               `json:"thumbnail_url" db:"thumbnail_url"`
 	Tags           []Tag                `json:"tags" db:"tags"`
-	LiveStreamTags []LivestreamTagModel `json:"live_stream_tags" db:"livestream_tags"`
+	LivestreamTags []LivestreamTagModel `json:"live_stream_tags" db:"livestream_tags"`
 	StartAt        int64                `json:"start_at" db:"start_at"`
 	EndAt          int64                `json:"end_at" db:"end_at"`
 }
