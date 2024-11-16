@@ -196,7 +196,7 @@ func searchLivestreamsHandler(c echo.Context) error {
 				u.id as 'owner.id',
 				u.name as 'owner.name',
 				u.display_name as 'owner.display_name',
-				u.description as 'owner.description',
+				u.description as 'owner.description'
 			FROM livestreams ls
 			INNER JOIN livestream_tags lt ON ls.id = lt.livestream_id
 			INNER JOIN users u ON ls.user_id = u.id
