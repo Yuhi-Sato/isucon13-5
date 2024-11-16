@@ -29,13 +29,14 @@ const (
 )
 
 var (
-	powerDNSSubdomainAddress string
-	dbConn                   *sqlx.DB
-	secret                   = []byte("isucon13_session_cookiestore_defaultsecret")
-	tagById                  = make(map[int64]*Tag)
-	themeByUserId            = cache.NewReadHeavyCache[int64, ThemeModel]()
-	fallbackImageHash        string
-	iconHashByUserId         = cache.NewReadHeavyCache[int64, string]()
+	powerDNSSubdomainAddress     string
+	dbConn                       *sqlx.DB
+	secret                       = []byte("isucon13_session_cookiestore_defaultsecret")
+	tagById                      = make(map[int64]*Tag)
+	themeByUserId                = cache.NewReadHeavyCache[int64, ThemeModel]()
+	fallbackImageHash            string
+	iconHashByUserId             = cache.NewReadHeavyCache[int64, string]()
+	livestreamTagsByLivestreamId = cache.NewReadHeavyCache[int64, []LivestreamTagModel]()
 )
 
 func init() {
@@ -142,6 +143,20 @@ func initializeHandler(c echo.Context) error {
 	}
 	for _, theme := range themes {
 		themeByUserId.Set(theme.UserID, theme)
+	}
+
+	var livestreamTags []LivestreamTagModel
+	if err := dbConn.Select(&livestreamTags, "SELECT * FROM livestream_tags"); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get livestream tags: "+err.Error())
+	}
+	for _, livestreamTag := range livestreamTags {
+		if v, ok := livestreamTagsByLivestreamId.Get(livestreamTag.LivestreamID); ok {
+			v = append(v, livestreamTag)
+
+			livestreamTagsByLivestreamId.Set(livestreamTag.LivestreamID, v)
+		} else {
+			livestreamTagsByLivestreamId.Set(livestreamTag.LivestreamID, []LivestreamTagModel{livestreamTag})
+		}
 	}
 
 	c.Request().Header.Add("Content-Type", "application/json;charset=utf-8")
