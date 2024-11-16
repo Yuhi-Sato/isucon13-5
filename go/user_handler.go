@@ -39,12 +39,12 @@ type UserModel struct {
 }
 
 type User struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	DisplayName string `json:"display_name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Theme       Theme  `json:"theme,omitempty"`
-	IconHash    string `json:"icon_hash,omitempty"`
+	ID          int64  `json:"id" db:"id"`
+	Name        string `json:"name" db:"name"`
+	DisplayName string `json:"display_name,omitempty" db:"display_name"`
+	Description string `json:"description,omitempty" db:"description"`
+	Theme       Theme  `json:"theme,omitempty" db:"theme"`
+	IconHash    string `json:"icon_hash,omitempty" db:"icon_hash"`
 }
 
 type Theme struct {
