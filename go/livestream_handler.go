@@ -493,7 +493,7 @@ func fillLivestreamResponse(ctx context.Context, tx *sqlx.Tx, livestreamModel Li
 
 		userByUserId.Set(livestreamModel.UserID, ownerModel)
 	}
-	owner, err := fillUserResponse(ctx, ownerModel)
+	owner, err := fillUserResponse(ctx, tx, ownerModel)
 	if err != nil {
 		return Livestream{}, err
 	}
@@ -509,11 +509,51 @@ func fillLivestreamResponse(ctx context.Context, tx *sqlx.Tx, livestreamModel Li
 
 	tags := make([]Tag, len(livestreamTagModels))
 	for i, t := range livestreamTagModels {
-		// tagModel := TagModel{}
-		// if err := tx.GetContext(ctx, &tagModel, "SELECT * FROM tags WHERE id = ?", livestreamTagModels[i].TagID); err != nil {
-		// 	return Livestream{}, err
-		// }
+		tags[i] = Tag{
+			ID:   t.TagID,
+			Name: tagById[t.TagID].Name,
+		}
+	}
 
+	livestream := Livestream{
+		ID:           livestreamModel.ID,
+		Owner:        owner,
+		Title:        livestreamModel.Title,
+		Tags:         tags,
+		Description:  livestreamModel.Description,
+		PlaylistUrl:  livestreamModel.PlaylistUrl,
+		ThumbnailUrl: livestreamModel.ThumbnailUrl,
+		StartAt:      livestreamModel.StartAt,
+		EndAt:        livestreamModel.EndAt,
+	}
+	return livestream, nil
+}
+
+func fillLivestreamResponseWithoutTx(ctx context.Context, livestreamModel LivestreamModel) (Livestream, error) {
+	ownerModel, ok := userByUserId.Get(livestreamModel.UserID)
+	if !ok {
+		if err := dbConn.GetContext(ctx, &ownerModel, "SELECT * FROM users WHERE id = ?", livestreamModel.UserID); err != nil {
+			return Livestream{}, err
+		}
+
+		userByUserId.Set(livestreamModel.UserID, ownerModel)
+	}
+	owner, err := fillUserResponseWithoutTx(ctx, ownerModel)
+	if err != nil {
+		return Livestream{}, err
+	}
+
+	livestreamTagModels, ok := livestreamTagsByLivestreamId.Get(livestreamModel.ID)
+	if !ok {
+		if err := dbConn.SelectContext(ctx, &livestreamTagModels, "SELECT * FROM livestream_tags WHERE livestream_id = ?", livestreamModel.ID); err != nil {
+			return Livestream{}, err
+		}
+
+		livestreamTagsByLivestreamId.Set(livestreamModel.ID, livestreamTagModels)
+	}
+
+	tags := make([]Tag, len(livestreamTagModels))
+	for i, t := range livestreamTagModels {
 		tags[i] = Tag{
 			ID:   t.TagID,
 			Name: tagById[t.TagID].Name,

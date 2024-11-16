@@ -78,12 +78,6 @@ func getLivecommentsHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "livestream_id in path must be integer")
 	}
 
-	tx, err := dbConn.BeginTxx(ctx, nil)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to begin transaction: "+err.Error())
-	}
-	defer tx.Rollback()
-
 	// query := "SELECT * FROM livecomments WHERE livestream_id = ? ORDER BY created_at DESC"
 	query := `
 	SELECT
@@ -119,7 +113,7 @@ func getLivecommentsHandler(c echo.Context) error {
 	}
 
 	livecomments := []Livecomment{}
-	err = tx.SelectContext(ctx, &livecomments, query, livestreamID)
+	err = dbConn.SelectContext(ctx, &livecomments, query, livestreamID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return c.JSON(http.StatusOK, []*Livecomment{})
 	}
@@ -134,7 +128,7 @@ func getLivecommentsHandler(c echo.Context) error {
 			DisplayName: livecomments[i].User.DisplayName,
 			Description: livecomments[i].User.Description,
 		}
-		commentOwner, err := fillUserResponse(ctx, commentOwnerModel)
+		commentOwner, err := fillUserResponseWithoutTx(ctx, commentOwnerModel)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
@@ -149,17 +143,13 @@ func getLivecommentsHandler(c echo.Context) error {
 			StartAt:      livecomments[i].Livestream.StartAt,
 			EndAt:        livecomments[i].Livestream.EndAt,
 		}
-		livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
+		livestream, err := fillLivestreamResponseWithoutTx(ctx, livestreamModel)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fil livecomments: "+err.Error())
 		}
 
 		livecomments[i].User = commentOwner
 		livecomments[i].Livestream = livestream
-	}
-
-	if err := tx.Commit(); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to commit: "+err.Error())
 	}
 
 	return c.JSON(http.StatusOK, livecomments)
@@ -489,7 +479,7 @@ func fillLivecommentResponse(ctx context.Context, tx *sqlx.Tx, livecommentModel 
 
 		userByUserId.Set(commentOwnerModel.ID, commentOwnerModel)
 	}
-	commentOwner, err := fillUserResponse(ctx, commentOwnerModel)
+	commentOwner, err := fillUserResponse(ctx, tx, commentOwnerModel)
 	if err != nil {
 		return Livecomment{}, err
 	}
@@ -498,7 +488,7 @@ func fillLivecommentResponse(ctx context.Context, tx *sqlx.Tx, livecommentModel 
 	if err := tx.GetContext(ctx, &livestreamModel, "SELECT * FROM livestreams WHERE id = ?", livecommentModel.LivestreamID); err != nil {
 		return Livecomment{}, err
 	}
-	livestream, err := fillLivestreamResponse(ctx, tx, livestreamModel)
+	livestream, err := fillLivestreamResponseWithoutTx(ctx, livestreamModel)
 	if err != nil {
 		return Livecomment{}, err
 	}
@@ -524,7 +514,7 @@ func fillLivecommentReportResponse(ctx context.Context, tx *sqlx.Tx, reportModel
 
 		userByUserId.Set(reporterModel.ID, reporterModel)
 	}
-	reporter, err := fillUserResponse(ctx, reporterModel)
+	reporter, err := fillUserResponse(ctx, tx, reporterModel)
 	if err != nil {
 		return LivecommentReport{}, err
 	}
